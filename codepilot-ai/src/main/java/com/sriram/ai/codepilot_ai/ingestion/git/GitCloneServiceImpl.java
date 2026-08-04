@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 
 @Service
 public class GitCloneServiceImpl implements GitCloneService {
@@ -39,8 +40,8 @@ public class GitCloneServiceImpl implements GitCloneService {
         }
         return directory.toPath();
     }
-
-    private String getRepositoryName(String repositoryUrl) {
+    @Override
+    public String getRepositoryName(String repositoryUrl) {
 
         String repositoryName = repositoryUrl.substring(repositoryUrl.lastIndexOf("/") + 1);
 
@@ -54,24 +55,26 @@ public class GitCloneServiceImpl implements GitCloneService {
     public  void deleteRepository(String repositoryUrl) {
         String repositoryName = getRepositoryName(repositoryUrl);
         Path repositoryPath = Path.of("repositories", repositoryName);
+        log.info("Trying to delete: {}", repositoryPath.resolve(".git/objects/pack"));
+
         if(Files.notExists(repositoryPath)){
             return ;
         }
         try {
+            Thread.sleep(2000);
             try (var paths = Files.walk(repositoryPath)) {
+               List<Path> files = paths.sorted(Comparator.reverseOrder())
+                        .toList();
+                for (Path file : files) {
+                    log.info("Deleting {}", file);
+                    Files.delete(file);
 
-                paths.sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.delete(path);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
-
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete repository", e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
         log.info("Deleted repository {}", repositoryName);
     }
