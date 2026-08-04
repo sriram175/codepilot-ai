@@ -16,8 +16,8 @@ public class ChatServiceImpl implements ChatService {
     private final SearchService searchService;
     private final ChatClient chatClient;
     @Override
-    public String chat(String question) {
-        List<Document> documents = searchService.search(question);
+    public String chat(Long id,String question) {
+        List<Document> documents = searchService.search(id,question);
         if (documents.isEmpty()) {
             return "I couldn't find any relevant information in the repository.";
         }

@@ -8,4 +8,6 @@ public interface QdrantService {
 
     void store(List<EmbeddedDocument> embeddedDocuments);
 
+    void deleteRepositoryVector(Long repositoryId);
+
 }

@@ -17,8 +17,11 @@ import io.qdrant.client.grpc.Points.PointStruct;
 import static io.qdrant.client.PointIdFactory.id;
 import static io.qdrant.client.ValueFactory.value;
 import static io.qdrant.client.VectorsFactory.vectors;
+import io.qdrant.client.grpc.Points.Filter;
+import static io.qdrant.client.ConditionFactory.match;
 
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 @Service
 @RequiredArgsConstructor
@@ -79,41 +82,7 @@ public class QdrantServiceImpl implements QdrantService {
         log.info("Collection {} created", collectionName);
     }
 
-//    private Struct buildPayload(EmbeddedDocument document) {
-//
-//        return Struct.newBuilder()
-//                .putFields(
-//                        "fileName",
-//                        Value.newBuilder()
-//                                .setStringValue(
-//                                        document.getDocument()
-//                                                .getMetadata()
-//                                                .get("fileName")
-//                                                .toString()
-//                                )
-//                                .build()
-//                )
-//                .putFields(
-//                        "filePath",
-//                        com.google.protobuf.Value.newBuilder()
-//                                .setStringValue(
-//                                        document.getDocument()
-//                                                .getMetadata()
-//                                                .get("filePath")
-//                                                .toString()
-//                                )
-//                                .build()
-//                )
-//                .putFields(
-//                        "text",
-//                        com.google.protobuf.Value.newBuilder()
-//                                .setStringValue(
-//                                        document.getDocument().getText()
-//                                )
-//                                .build()
-//                )
-//                .build();
-//    }
+
 private PointStruct buildPoint(EmbeddedDocument embeddedDocument) {
     Document document = embeddedDocument.getDocument();
     return PointStruct.newBuilder()
@@ -141,5 +110,35 @@ private PointStruct buildPoint(EmbeddedDocument embeddedDocument) {
                     )
             )
             .build();
-}
+    }
+    @Override
+    public void deleteRepositoryVector(Long repositoryId){
+
+        try{
+            boolean exists = qdrantClient
+                    .collectionExistsAsync(collectionName)
+                    .get();
+
+            if (!exists) {
+                log.info("Collection {} does not exist. Skipping delete.", collectionName);
+                return;
+            }
+            Filter filter = Filter.newBuilder()
+                    .addMust(match("repositoryId", repositoryId.longValue()))
+                    .build();
+            qdrantClient.deleteAsync(collectionName,filter).get();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to delete repository vector" ,e);
+        }
+    }
+
+//private UUID generateUUID(EmbeddedDocument embeddedDocument) {
+//        Document document = embeddedDocument.getDocument();
+//        Long repositoryId = (Long) document.getMetadata().get("repositoryId");
+//        String filePath = document.getMetadata().get("filePath").toString();
+//        int chunkIndex = embeddedDocument.getChunkIndex();
+//        String key = repositoryId + ":" + filePath + ":" + chunkIndex;
+//        return UUID.nameUUIDFromBytes(key.getBytes());
+//}
+
 }

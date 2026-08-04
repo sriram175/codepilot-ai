@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 public class QueryRequest {
+    private Long repositoryId;
+
     @NotBlank
-    String question;
-    @NotBlank
-    String repositoryName;
+    private String question;
 }

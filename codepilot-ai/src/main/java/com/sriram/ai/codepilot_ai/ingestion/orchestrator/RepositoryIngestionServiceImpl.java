@@ -35,13 +35,17 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
         Path repositoryPath = gitCloneService.cloneRepository(cloneRequest.getRepositoryUrl());
         String repositoryName = repositoryPath.getFileName().toString();
         Repository repository = repositoryRepository.findByUrl(cloneRequest.getRepositoryUrl())
-                .orElseGet(() -> repositoryRepository.save(
-                        Repository.builder()
-                                .name(repositoryName)
-                                .url(cloneRequest.getRepositoryUrl())
-                                .createdAt(LocalDateTime.now())
-                                .build()
-                ));
+                .orElse(null);
+        if(repository == null){
+            repository = repositoryRepository.save(Repository.builder()
+                    .name(repositoryName)
+                    .url(cloneRequest.getRepositoryUrl())
+                    .createdAt(LocalDateTime.now())
+                    .build());
+        }
+        else{
+            qdrantService.deleteRepositoryVector(repository.getId());
+        }
 
         List<Path> files = fileScannerService.scan(repositoryPath);
 

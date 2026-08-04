@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 import static io.qdrant.client.WithPayloadSelectorFactory.enable;
+import io.qdrant.client.grpc.Points.Filter;
+import static io.qdrant.client.ConditionFactory.match;
 
 @Service
 @RequiredArgsConstructor
@@ -21,12 +23,16 @@ public class SearchServiceImpl implements SearchService {
     @Value("${spring.ai.vectorstore.qdrant.collection-name}")
     private String collectionName;
     @Override
-    public List<Document> search(String question) {
+    public List<Document> search(Long repositoryId,String question) {
         List<Float> questionEmbedding = embeddingService.embedQuery(question);
+        Filter filter = Filter.newBuilder()
+                .addMust(match("repositoryId", repositoryId))
+                .build();
         Points.SearchPoints searchPoints = Points.SearchPoints.newBuilder()
                 .setCollectionName(collectionName)
                 .addAllVector(questionEmbedding)
                 .setLimit(5)
+                .setFilter(filter)
                 .setWithPayload(enable(true))
                 .build();
         List< Points.ScoredPoint> result;

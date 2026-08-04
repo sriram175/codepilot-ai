@@ -35,7 +35,8 @@ public class GoogleEmbeddingServiceImpl implements EmbeddingService {
     @Override
     public List<EmbeddedDocument> embed(List<Document> documents) {
         List<EmbeddedDocument> embeddedDocuments = new ArrayList<>();
-        for(Document document : documents) {
+        for(int i = 0; i < documents.size(); i++) {
+            Document document = documents.get(i);
             EmbedContentResponse response = client.models.embedContent(
                     embeddingModel,
                     document.getText(),

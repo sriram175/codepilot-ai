@@ -16,7 +16,7 @@ import javax.validation.Valid;
 public class ChatController {
     private final ChatService chatService;
     @PostMapping("/ask")
-    public String askQuestion(@Valid @RequestBody QueryRequest question) {
-        return chatService.chat(question.getQuestion());
+    public String askQuestion(@Valid @RequestBody QueryRequest queryRequest) {
+        return chatService.chat(queryRequest.getRepositoryId() , queryRequest.getQuestion());
     }
 }
