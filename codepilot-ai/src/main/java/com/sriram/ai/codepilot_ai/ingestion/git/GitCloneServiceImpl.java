@@ -28,10 +28,11 @@ public class GitCloneServiceImpl implements GitCloneService {
                 log.info("Repository {} already exists. Skipping clone.", repositoryName);
                 return directory.toPath();
             }
-            Git.cloneRepository()
+            try (Git git = Git.cloneRepository()
                     .setURI(repositoryUrl)
                     .setDirectory(directory)
-                    .call();
+                    .call()) {
+            }
         }
         catch(GitAPIException e){
             throw new RuntimeException("Failed to clone repository: " + e.getMessage(), e);
@@ -57,15 +58,18 @@ public class GitCloneServiceImpl implements GitCloneService {
             return ;
         }
         try {
-            Files.walk(repositoryPath)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+            try (var paths = Files.walk(repositoryPath)) {
+
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            try {
+                                Files.delete(path);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+
+            }
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete repository", e);
         }

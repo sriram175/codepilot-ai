@@ -15,7 +15,7 @@ import java.util.List;
 public class RepositoryServiceImpl implements RepositoryService {
     private final RepositoryRepository repositoryRepository;
     private final QdrantService qdrantService;
-    private GitCloneServiceImpl gitCloneService;
+    private final GitCloneServiceImpl gitCloneServiceImpl;
 
     @Override
     public List<RepositoryResponse> findAll() {
@@ -36,7 +36,7 @@ public class RepositoryServiceImpl implements RepositoryService {
         Repository repository = repositoryRepository.findById(repositoryId)
                 .orElseThrow(() -> new RuntimeException("Repository not found"));
         qdrantService.deleteRepositoryVector(repositoryId);
-        gitCloneService.deleteRepository(repository.getUrl());
+        gitCloneServiceImpl.deleteRepository(repository.getUrl());
         repositoryRepository.delete(repository);
     }
 
