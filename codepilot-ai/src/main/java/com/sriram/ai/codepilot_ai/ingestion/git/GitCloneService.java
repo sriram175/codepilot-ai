@@ -5,4 +5,7 @@ import java.nio.file.Path;
 public interface GitCloneService {
     Path cloneRepository(String repositoryUrl);
     void deleteRepository(String repositoryUrl);
+    String getRepositoryName(String repositoryUrl);
+    Path pullRepository(String repositoryUrl);
+    boolean repositoryExists(String repositoryUrl);
 }

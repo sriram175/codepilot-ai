@@ -126,7 +126,9 @@ private PointStruct buildPoint(EmbeddedDocument embeddedDocument) {
             Filter filter = Filter.newBuilder()
                     .addMust(match("repositoryId", repositoryId.longValue()))
                     .build();
-            qdrantClient.deleteAsync(collectionName,filter).get();
+            var response = qdrantClient.deleteAsync(collectionName, filter).get();
+
+            log.info("Delete response: {}", response);
         } catch (Exception e) {
             throw new RuntimeException("Failed to delete repository vector" ,e);
         }

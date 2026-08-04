@@ -32,8 +32,8 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
 
     @Override
     public void ingest(CloneRequest cloneRequest) {
-        Path repositoryPath = gitCloneService.cloneRepository(cloneRequest.getRepositoryUrl());
-        String repositoryName = repositoryPath.getFileName().toString();
+        String repositoryName = gitCloneService.getRepositoryName(cloneRequest.getRepositoryUrl());
+        Path repositoryPath;
         Repository repository = repositoryRepository.findByUrl(cloneRequest.getRepositoryUrl())
                 .orElse(null);
         if(repository == null){
@@ -42,8 +42,15 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
                     .url(cloneRequest.getRepositoryUrl())
                     .createdAt(LocalDateTime.now())
                     .build());
+            repositoryPath = gitCloneService.cloneRepository(cloneRequest.getRepositoryUrl());
         }
         else{
+            if (gitCloneService.repositoryExists(cloneRequest.getRepositoryUrl())) {
+                repositoryPath = gitCloneService.pullRepository(cloneRequest.getRepositoryUrl());
+            } else {
+                repositoryPath = gitCloneService.cloneRepository(cloneRequest.getRepositoryUrl());
+            }
+
             qdrantService.deleteRepositoryVector(repository.getId());
         }
 
