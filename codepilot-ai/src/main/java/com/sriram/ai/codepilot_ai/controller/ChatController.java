@@ -1,5 +1,6 @@
 package com.sriram.ai.codepilot_ai.controller;
 
+import com.sriram.ai.codepilot_ai.dto.ChatResponse;
 import com.sriram.ai.codepilot_ai.dto.QueryRequest;
 import com.sriram.ai.codepilot_ai.retrieval.chat.ChatService;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,7 @@ import javax.validation.Valid;
 public class ChatController {
     private final ChatService chatService;
     @PostMapping("/ask")
-    public String askQuestion(@Valid @RequestBody QueryRequest queryRequest) {
+    public ChatResponse askQuestion(@Valid @RequestBody QueryRequest queryRequest) {
         return chatService.chat(queryRequest.getRepositoryId() , queryRequest.getQuestion());
     }
 }

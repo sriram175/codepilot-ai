@@ -1,5 +1,10 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
+import com.sriram.ai.codepilot_ai.dto.ChatResponse;
+import com.sriram.ai.codepilot_ai.dto.SourceDto;
+
+import java.util.List;
+
 public interface ChatService {
-    String chat(Long id, String question);
+    ChatResponse chat(Long id, String question);
 }

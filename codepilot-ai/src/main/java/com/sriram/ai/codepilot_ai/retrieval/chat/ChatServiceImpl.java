@@ -1,5 +1,7 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
+import com.sriram.ai.codepilot_ai.dto.ChatResponse;
+import com.sriram.ai.codepilot_ai.dto.SourceDto;
 import com.sriram.ai.codepilot_ai.retrieval.search.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -16,21 +18,34 @@ public class ChatServiceImpl implements ChatService {
     private final SearchService searchService;
     private final ChatClient chatClient;
     @Override
-    public String chat(Long id,String question) {
+    public ChatResponse chat(Long id, String question) {
         List<Document> documents = searchService.search(id,question);
         if (documents.isEmpty()) {
-            return "I couldn't find any relevant information in the repository.";
+            return ChatResponse.builder()
+                    .answer("I couldn't find any relevant information in the repository.")
+                    .sources(List.of())
+                    .build();
         }
         String context = documents.stream()
                 .map(Document :: getText)
                 .collect(Collectors.joining("\n\n"));
+        List<SourceDto> sources = documents.stream().
+                map(document -> SourceDto.builder()
+                        .fileName(document.getMetadata().get("fileName").toString())
+                        .filePath(document.getMetadata().get("filePath").toString())
+                        .build())
+                .distinct()
+                .toList();
         String prompt = """
                         You are an expert Java backend engineer.
                         
-                        Answer the user's question ONLY using the repository context provided below.
+                        Answer the user's question ONLY using the repository context below.
                         
-                        If the answer cannot be found in the context, reply:
-                        "I couldn't find that information in the repository."
+                        Rules:
+                        - Do not make up classes, methods, or files.
+                        - If the answer is not present in the context, reply:
+                          "I couldn't find that information in the repository."
+                        - When relevant, mention the filenames that support your answer.
                         
                         Repository Context:
                         %s
@@ -39,9 +54,13 @@ public class ChatServiceImpl implements ChatService {
                         %s
                         """.formatted(context, question);
         try {
-            return chatClient.prompt(prompt)
+            String answer = chatClient.prompt(prompt)
                     .call()
                     .content();
+            return ChatResponse.builder()
+                    .answer(answer)
+                    .sources(sources)
+                    .build();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate answer", e);
         }
