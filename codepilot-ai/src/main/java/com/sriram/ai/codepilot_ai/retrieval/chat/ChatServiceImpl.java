@@ -1,6 +1,8 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
+import com.google.api.client.util.Value;
 import com.sriram.ai.codepilot_ai.dto.ChatResponse;
+import com.sriram.ai.codepilot_ai.dto.SearchResultDto;
 import com.sriram.ai.codepilot_ai.dto.SourceDto;
 import com.sriram.ai.codepilot_ai.retrieval.search.SearchService;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +19,16 @@ public class ChatServiceImpl implements ChatService {
 
     private final SearchService searchService;
     private final ChatClient chatClient;
+    @Value("${codepilot.search.score-threshold}")
+    private double scoreThreshold;
+
     @Override
     public ChatResponse chat(Long id, String question) {
-        List<Document> documents = searchService.search(id,question);
-        if (documents.isEmpty()) {
+        SearchResultDto searchResultDto = searchService.search(id,question);
+        List<Document> documents = searchResultDto.getDocuments();
+        double maxScore = searchResultDto.getMaxScore();
+
+        if (documents.isEmpty() || maxScore < scoreThreshold) {
             return ChatResponse.builder()
                     .answer("I couldn't find any relevant information in the repository.")
                     .sources(List.of())

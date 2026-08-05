@@ -23,4 +23,6 @@ public class Repository {
     @Column(nullable = false, unique = true)
     private String url;
     private LocalDateTime createdAt;
+    @Column(columnDefinition = "TEXT")
+    private String summary;
 }

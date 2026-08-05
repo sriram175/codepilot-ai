@@ -9,6 +9,7 @@ import com.sriram.ai.codepilot_ai.ingestion.embedding.EmbeddingService;
 import com.sriram.ai.codepilot_ai.ingestion.git.GitCloneService;
 import com.sriram.ai.codepilot_ai.ingestion.reader.FileReaderService;
 import com.sriram.ai.codepilot_ai.ingestion.scanner.FileScannerService;
+import com.sriram.ai.codepilot_ai.ingestion.summary.RepositorySummaryService;
 import com.sriram.ai.codepilot_ai.repository.RepositoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
@@ -29,6 +30,7 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
     private final EmbeddingService embeddingService;
     private final QdrantService qdrantService;
     private final RepositoryRepository repositoryRepository;
+    private final RepositorySummaryService repositorySummaryService;
 
     @Override
     public void ingest(CloneRequest cloneRequest) {
@@ -53,7 +55,6 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
 
             qdrantService.deleteRepositoryVector(repository.getId());
         }
-
         List<Path> files = fileScannerService.scan(repositoryPath);
 
         for(Path file : files) {
@@ -68,5 +69,8 @@ public class RepositoryIngestionServiceImpl implements RepositoryIngestionServic
             List<EmbeddedDocument> embeddedDocuments = embeddingService.embed(chunks);
             qdrantService.store(embeddedDocuments);
         }
+        String summary = repositorySummaryService.generateRepositorySummary(repositoryPath);
+        repository.setSummary(summary);
+        repositoryRepository.save(repository);
     }
 }
