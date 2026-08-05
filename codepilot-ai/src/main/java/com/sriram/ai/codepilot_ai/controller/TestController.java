@@ -1,21 +1,27 @@
 package com.sriram.ai.codepilot_ai.controller;
 
+import com.sriram.ai.codepilot_ai.ingestion.git.GitCloneService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.chat.model.ChatModel;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/test")
+@RequestMapping("/api/test")
 @RequiredArgsConstructor
 public class TestController {
 
-    private final ChatModel chatModel;
+    private final GitCloneService gitCloneService;
 
-    @GetMapping
-    public String test() {
+    @PostMapping("/clone-delete")
+    public String cloneAndDelete() {
 
-        return chatModel.call("Hey");
+        String repositoryUrl = "https://github.com/sriram175/smart-expense-tracker.git";
+
+        gitCloneService.cloneRepository(repositoryUrl);
+
+        gitCloneService.deleteRepository(repositoryUrl);
+
+        return "Done";
     }
 }

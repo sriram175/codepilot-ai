@@ -39,7 +39,7 @@ public class RepositoryServiceImpl implements RepositoryService {
         Repository repository = repositoryRepository.findById(repositoryId)
                 .orElseThrow(() -> new RuntimeException("Repository not found"));
         qdrantService.deleteRepositoryVector(repositoryId);
-        gitCloneServiceImpl.deleteRepository(repository.getUrl());
+//        gitCloneServiceImpl.deleteRepository(repository.getUrl());
         repositoryRepository.delete(repository);
     }
 

@@ -38,11 +38,6 @@ public class SearchServiceImpl implements SearchService {
         List< Points.ScoredPoint> result;
         try{
             result = qdrantClient.searchAsync(searchPoints).get();
-            for (Points.ScoredPoint point : result) {
-                System.out.println("==================================");
-                System.out.println("File: " + point.getPayloadMap().get("filePath").getStringValue());
-                System.out.println(point.getPayloadMap().get("text").getStringValue());
-            }
         } catch (Exception e) {
             throw new RuntimeException("Failed to search vectors in Qdrant", e);
         }
