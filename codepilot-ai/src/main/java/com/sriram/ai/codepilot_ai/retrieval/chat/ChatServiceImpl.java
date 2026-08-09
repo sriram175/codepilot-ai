@@ -1,6 +1,9 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
 import com.sriram.ai.codepilot_ai.ingestion.Qdrant.QdrantServiceImpl;
+import com.sriram.ai.codepilot_ai.retrieval.history.ConversationHistoryService;
+import com.sriram.ai.codepilot_ai.retrieval.prompt.PromptBuilder;
+import com.sriram.ai.codepilot_ai.service.MessageService;
 import com.sriram.ai.codepilot_ai.service.QueryRewriteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,9 @@ public class ChatServiceImpl implements ChatService {
     private final ConversationRepository conversationRepository;
     private final MessageRepository messageRepository;
     private final QueryRewriteService queryRewriteService;
+    private final ConversationHistoryService conversationHistoryService;
+    private final PromptBuilder promptBuilder;
+    private MessageService messageService;
 
     @Value("${codepilot.search.score-threshold}")
     private double scoreThreshold;
@@ -44,19 +50,10 @@ public class ChatServiceImpl implements ChatService {
                 .orElseThrow(() -> new RuntimeException("Conversation not found"));
         Repository repository = conversation.getRepository();
 
-        Message userMessage = Message.builder().
-                conversation(conversation).
-                messageRole(MessageRole.USER).
-                content(question).
-                build();
-        messageRepository.save(userMessage);
-        List<Message> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId);
+        messageService.saveUserMessage(conversation,question);
+        List<Message> messages = messageService.getConversationMessages(conversationId);
 
-        String conversationHistory = messages.stream()
-                .map(message ->
-                        message.getMessageRole().name()+":\n" +
-                        message.getContent())
-                .collect(Collectors.joining("\n\n"));
+        String conversationHistory = conversationHistoryService.buildConversationHistory(messages);
         String rewrittenQuestion = queryRewriteService.rewrite(messages,question);
         log.info("Original Question : {}", question);
         log.info("Rewritten Question: {}", rewrittenQuestion);
@@ -81,36 +78,12 @@ public class ChatServiceImpl implements ChatService {
                         .build())
                 .distinct()
                 .toList();
-        String prompt = """
-                        You are an expert Java backend engineer.
-                        
-                        Answer the user's question ONLY using the repository context below.
-                        
-                        Rules:
-                        - Do not make up classes, methods, or files.
-                        - If the answer is not present in the context, reply:
-                          "I couldn't find that information in the repository."
-                        - When relevant, mention the filenames that support your answer.
-                        
-                        Conversation History:
-                          %s
-                          
-                          Repository Context:
-                          %s
-                          
-                          Current Question:
-                          %s
-                        """.formatted(conversationHistory, context, question);
+        String prompt = promptBuilder.buildChatPrompt(conversationHistory,context,question);
         try {
             String answer = chatClient.prompt(prompt)
                     .call()
                     .content();
-            Message assistantMessage = Message.builder()
-                    .conversation(conversation)
-                    .content(answer)
-                    .messageRole(MessageRole.ASSISTANT)
-                    .build();
-            messageRepository.save(assistantMessage);
+            messageService.saveAssistantMessage(conversation,question);
             conversationRepository.save(conversation);
             return ChatResponse.builder()
                     .answer(answer)
