@@ -6,5 +6,5 @@ import com.sriram.ai.codepilot_ai.dto.SourceDto;
 import java.util.List;
 
 public interface ChatService {
-    ChatResponse chat(Long id, String question);
+    ChatResponse chat(Long conversationId, String question);
 }
