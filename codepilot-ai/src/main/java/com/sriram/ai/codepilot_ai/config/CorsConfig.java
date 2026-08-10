@@ -1,6 +1,7 @@
 package com.sriram.ai.codepilot_ai.config;
 
 
+import com.google.api.client.util.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -13,13 +14,18 @@ public class CorsConfig {
     public WebMvcConfigurer corsConfigurer() {
 
         return new WebMvcConfigurer() {
-
+            @Value("${app.frontend.url}")
+            private String frontendUrl;
             @Override
             public void addCorsMappings(CorsRegistry registry) {
 
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173")
-                        .allowedMethods("*")
+                        .allowedOrigins(frontendUrl)
+                        .allowedMethods("GET",
+                                "POST",
+                                "PUT",
+                                "PATCH",
+                                "DELETE")
                         .allowedHeaders("*");
             }
         };

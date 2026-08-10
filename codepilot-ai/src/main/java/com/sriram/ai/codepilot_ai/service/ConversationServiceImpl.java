@@ -5,16 +5,15 @@ import com.sriram.ai.codepilot_ai.dto.CreateConversationResponse;
 import com.sriram.ai.codepilot_ai.dto.MessageResponse;
 import com.sriram.ai.codepilot_ai.entity.Conversation;
 import com.sriram.ai.codepilot_ai.entity.Repository;
+import com.sriram.ai.codepilot_ai.exception.RepositoryNotFoundException;
 import com.sriram.ai.codepilot_ai.repository.ConversationRepository;
 import com.sriram.ai.codepilot_ai.repository.MessageRepository;
 import com.sriram.ai.codepilot_ai.repository.RepositoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -29,7 +28,7 @@ public class ConversationServiceImpl implements  ConversationService{
     public CreateConversationResponse createConversation(Long repositoryId) {
         Repository repository = repositoryRepository.findById(repositoryId)
                 .orElseThrow(()->
-                        new RuntimeException("Repository not found with id: "+ repositoryId));
+                        new RepositoryNotFoundException(repositoryId));
         Conversation conversation = Conversation.
                 builder().
                 repository(repository).
@@ -54,6 +53,8 @@ public class ConversationServiceImpl implements  ConversationService{
 
     @Override
     public void deleteConversation(Long conversationId) {
+        Conversation conversation = conversationRepository.findById(conversationId).orElseThrow();
+        conversationRepository.delete(conversation);
 
     }
 

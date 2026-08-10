@@ -44,6 +44,15 @@ public class ConversationController {
 
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/conversations/{conversationId}")
+    public ResponseEntity<Void> deleteConversation(
+            @PathVariable Long conversationId) {
+
+        conversationService.deleteConversation(conversationId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
 
 

@@ -2,6 +2,8 @@ package com.sriram.ai.codepilot_ai.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -13,6 +15,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Repository {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,9 +23,14 @@ public class Repository {
 
     @Column(nullable = false)
     private String name;
+
     @Column(nullable = false, unique = true)
     private String url;
+
+    @CreatedDate
+    @Column(nullable = false,updatable = false)
     private LocalDateTime createdAt;
+
     @Column(columnDefinition = "TEXT")
     private String summary;
 }
