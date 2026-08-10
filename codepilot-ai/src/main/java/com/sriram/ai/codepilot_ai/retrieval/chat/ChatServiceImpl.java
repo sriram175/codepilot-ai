@@ -1,6 +1,7 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
-import com.sriram.ai.codepilot_ai.ingestion.Qdrant.QdrantServiceImpl;
+import com.sriram.ai.codepilot_ai.retrieval.classifier.QuestionType;
+import com.sriram.ai.codepilot_ai.retrieval.classifier.QuestionTypeClassifier;
 import com.sriram.ai.codepilot_ai.retrieval.history.ConversationHistoryService;
 import com.sriram.ai.codepilot_ai.retrieval.prompt.PromptBuilder;
 import com.sriram.ai.codepilot_ai.service.MessageService;
@@ -13,10 +14,8 @@ import com.sriram.ai.codepilot_ai.dto.SearchResultDto;
 import com.sriram.ai.codepilot_ai.dto.SourceDto;
 import com.sriram.ai.codepilot_ai.entity.Conversation;
 import com.sriram.ai.codepilot_ai.entity.Message;
-import com.sriram.ai.codepilot_ai.entity.MessageRole;
 import com.sriram.ai.codepilot_ai.entity.Repository;
 import com.sriram.ai.codepilot_ai.repository.ConversationRepository;
-import com.sriram.ai.codepilot_ai.repository.MessageRepository;
 import com.sriram.ai.codepilot_ai.retrieval.search.SearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
@@ -35,11 +34,11 @@ public class ChatServiceImpl implements ChatService {
     private final SearchService searchService;
     private final ChatClient chatClient;
     private final ConversationRepository conversationRepository;
-    private final MessageRepository messageRepository;
     private final QueryRewriteService queryRewriteService;
     private final ConversationHistoryService conversationHistoryService;
     private final PromptBuilder promptBuilder;
-    private MessageService messageService;
+    private final MessageService messageService;
+    private final QuestionTypeClassifier questionTypeClassifier;
 
     @Value("${codepilot.search.score-threshold}")
     private double scoreThreshold;
@@ -52,11 +51,44 @@ public class ChatServiceImpl implements ChatService {
 
         messageService.saveUserMessage(conversation,question);
         List<Message> messages = messageService.getConversationMessages(conversationId);
-
         String conversationHistory = conversationHistoryService.buildConversationHistory(messages);
-        String rewrittenQuestion = queryRewriteService.rewrite(messages,question);
-        log.info("Original Question : {}", question);
-        log.info("Rewritten Question: {}", rewrittenQuestion);
+//        QuestionType questionType = questionTypeClassifier.classify(question);
+        return handleCodeQuestion(question,
+                    conversation,
+                    conversationHistory,
+                    messages,
+                    repository);
+
+
+    }
+
+    private ChatResponse handleArchitectureQuestion(String question,
+                                                    Conversation conversation,
+                                                    String conversationHistory,
+                                                    Repository repository) {
+        String summary = repository.getSummary();
+        String prompt = promptBuilder.buildArchitecturePrompt(summary,conversationHistory,question);
+        String answer = chatClient.prompt(prompt)
+                .call()
+                .content();
+        messageService.saveAssistantMessage(conversation,answer);
+        return ChatResponse.builder()
+                .answer(answer)
+                .sources(List.of())
+                .build();
+
+    }
+
+    private ChatResponse handleCodeQuestion(String question,
+                                            Conversation conversation,
+                                            String conversationHistory,
+                                            List<Message> messages,
+                                            Repository repository
+                                            ){
+        String rewrittenQuestion = question;
+        if(messages.size() > 1) {
+            rewrittenQuestion = queryRewriteService.rewrite(messages, question);
+        }
         SearchResultDto searchResultDto = searchService.search(repository.getId(),rewrittenQuestion);
         List<Document> documents = searchResultDto.getDocuments();
         double maxScore = searchResultDto.getMaxScore();
@@ -78,13 +110,12 @@ public class ChatServiceImpl implements ChatService {
                         .build())
                 .distinct()
                 .toList();
-        String prompt = promptBuilder.buildChatPrompt(conversationHistory,context,question);
+        String prompt = promptBuilder.buildChatPrompt(conversationHistory,context,question, repository.getSummary());
         try {
             String answer = chatClient.prompt(prompt)
                     .call()
                     .content();
-            messageService.saveAssistantMessage(conversation,question);
-            conversationRepository.save(conversation);
+            messageService.saveAssistantMessage(conversation,answer);
             return ChatResponse.builder()
                     .answer(answer)
                     .sources(sources)
@@ -92,5 +123,9 @@ public class ChatServiceImpl implements ChatService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate answer", e);
         }
+
     }
+
+
 }
+

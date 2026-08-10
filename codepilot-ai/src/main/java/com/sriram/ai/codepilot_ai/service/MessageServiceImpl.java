@@ -2,6 +2,7 @@ package com.sriram.ai.codepilot_ai.service;
 
 import com.sriram.ai.codepilot_ai.entity.Conversation;
 import com.sriram.ai.codepilot_ai.entity.Message;
+import com.sriram.ai.codepilot_ai.entity.MessageRole;
 import com.sriram.ai.codepilot_ai.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ public class MessageServiceImpl implements MessageService{
                 Message.builder()
                         .conversation(conversation)
                         .content(content)
+                        .messageRole(MessageRole.USER)
                         .build()
         );
     }
@@ -28,6 +30,7 @@ public class MessageServiceImpl implements MessageService{
                 Message.builder()
                         .conversation(conversation)
                         .content(content)
+                        .messageRole(MessageRole.ASSISTANT)
                         .build()
         );
     }

@@ -5,27 +5,37 @@ import org.springframework.stereotype.Service;
 @Service
 public class PromptBuilderImpl implements PromptBuilder{
     @Override
-    public String buildChatPrompt(String conversationHistory, String repositoryContext, String question) {
+    public String buildChatPrompt(String conversationHistory, String repositoryContext, String question,String repositorySummary) {
         String prompt = """
-                        You are an expert Java backend engineer.
-                        
-                        Answer the user's question ONLY using the repository context below.
-                        
-                        Rules:
-                        - Do not make up classes, methods, or files.
-                        - If the answer is not present in the context, reply:
-                          "I couldn't find that information in the repository."
-                        - When relevant, mention the filenames that support your answer.
-                        
-                        Conversation History:
-                          %s
-                          
-                          Repository Context:
-                          %s
-                          
-                          Current Question:
-                          %s
-                        """.formatted(conversationHistory, repositoryContext, question);
+                You are an expert Java backend engineer.
+                    
+                    Use BOTH:
+                    
+                    1. Repository Summary
+                    2. Repository Context
+                    
+                    Repository Summary provides the high-level architecture.
+                    
+                    Repository Context provides implementation details.
+                    
+                    Use the repository summary to understand the project structure and modules.
+                    
+                    Use the repository context to answer implementation-specific questions.
+                    
+                    If the answer cannot be found in either, say so.
+                    
+                    Conversation History:
+                    %s
+                    
+                    Repository Summary:
+                    %s
+                    
+                    Repository Context:
+                    %s
+                    
+                    Current Question:
+                    %s
+                        """.formatted(conversationHistory, repositorySummary, repositoryContext, question);
         return prompt;
     }
 
@@ -52,5 +62,23 @@ public class PromptBuilderImpl implements PromptBuilder{
                     %s
                     """.formatted(conversationHistory, question);
         return prompt;
+    }
+
+    @Override
+    public String buildArchitecturePrompt(String repositorySummary,String conversationHistory, String question) {
+        return """
+                You are a senior Java software architect.
+                
+                Answer the user's question using ONLY the repository summary below.
+                
+                If the summary does not contain enough information,
+                clearly state what information is missing.
+                
+                Repository Summary:
+                %s
+                
+                Question:
+                %s
+                """.formatted(repositorySummary, question);
     }
 }
