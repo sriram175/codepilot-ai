@@ -1,6 +1,8 @@
 package com.sriram.ai.codepilot_ai.ingestion.git;
 
 
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,33 +26,19 @@ public class GitCloneServiceImpl implements GitCloneService {
         String repositoryName = getRepositoryName(repositoryUrl);
 
         File directory = new File(repositoryRoot+repositoryName);
-        try{
 
-            if(directory.exists()){
-                log.info("Repository {} already exists. Skipping clone.", repositoryName);
-                return directory.toPath();
-            }
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "git",
-                    "clone",
-                    repositoryUrl,
-                    directory.getAbsolutePath()
-            );
-
-            processBuilder.redirectErrorStream(true);
-
-            Process process = processBuilder.start();
-
-            int exitCode = process.waitFor();
-            System.out.println("Clone finished");
-
-            Thread.sleep(10000);   // <-- add this temporarily
-
-            if (exitCode != 0) {
-                throw new RuntimeException("Failed to clone repository");
-            }
+        if (directory.exists()) {
+            log.info("Repository {} already exists. Skipping clone.", repositoryName);
+            return directory.toPath();
         }
-        catch (IOException | InterruptedException e) {
+        try (Git git = Git.cloneRepository()
+                .setURI(repositoryUrl)
+                .setDirectory(directory)
+                .call()) {
+
+            log.info("Successfully cloned {}", repositoryName);
+
+        } catch (GitAPIException e) {
             throw new RuntimeException("Failed to clone repository", e);
         }
         return directory.toPath();
@@ -78,26 +66,13 @@ public class GitCloneServiceImpl implements GitCloneService {
             throw new RuntimeException("Repository does not exist locally.");
         }
 
-        try {
+        try (Git git = Git.open(directory)) {
 
-            ProcessBuilder processBuilder = new ProcessBuilder(
-                    "git",
-                    "-C",
-                    directory.getAbsolutePath(),
-                    "pull"
-            );
+            git.pull().call();
 
-            processBuilder.redirectErrorStream(true);
+            log.info("Successfully pulled {}", repositoryName);
 
-            Process process = processBuilder.start();
-
-            int exitCode = process.waitFor();
-
-            if (exitCode != 0) {
-                throw new RuntimeException("Failed to pull repository.");
-            }
-
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Failed to pull repository.", e);
         }
         return directory.toPath();

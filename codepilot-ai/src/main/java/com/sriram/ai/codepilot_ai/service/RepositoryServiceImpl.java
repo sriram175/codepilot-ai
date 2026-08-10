@@ -1,6 +1,7 @@
 package com.sriram.ai.codepilot_ai.service;
 
 import com.sriram.ai.codepilot_ai.dto.RepositoryResponse;
+import com.sriram.ai.codepilot_ai.dto.RepositorySummaryResponseDto;
 import com.sriram.ai.codepilot_ai.entity.Repository;
 import com.sriram.ai.codepilot_ai.ingestion.Qdrant.QdrantService;
 import com.sriram.ai.codepilot_ai.ingestion.git.GitCloneServiceImpl;
@@ -41,6 +42,18 @@ public class RepositoryServiceImpl implements RepositoryService {
         qdrantService.deleteRepositoryVector(repositoryId);
 //        gitCloneServiceImpl.deleteRepository(repository.getUrl());
         repositoryRepository.delete(repository);
+    }
+
+    @Override
+    public RepositorySummaryResponseDto getRepositorySummary(Long repositoryId) {
+        Repository repository =  repositoryRepository.findById(repositoryId)
+                .orElseThrow(() ->
+                        new RuntimeException("Repository not found with id: " + repositoryId));
+        return RepositorySummaryResponseDto.builder()
+                .repositoryId(repository.getId())
+                .repositoryName(repository.getName())
+                .summary(repository.getSummary())
+                .build();
     }
 
     private RepositoryResponse mapToRepositoryResponse(Repository repository) {

@@ -1,5 +1,6 @@
 package com.sriram.ai.codepilot_ai.retrieval.search;
 
+import com.sriram.ai.codepilot_ai.dto.SearchResultDto;
 import com.sriram.ai.codepilot_ai.ingestion.embedding.EmbeddingService;
 import io.qdrant.client.QdrantClient;
 import io.qdrant.client.grpc.Points;
@@ -23,7 +24,7 @@ public class SearchServiceImpl implements SearchService {
     @Value("${spring.ai.vectorstore.qdrant.collection-name}")
     private String collectionName;
     @Override
-    public List<Document> search(Long repositoryId,String question) {
+    public SearchResultDto search(Long repositoryId, String question) {
         List<Float> questionEmbedding = embeddingService.embedQuery(question);
         Filter filter = Filter.newBuilder()
                 .addMust(match("repositoryId", repositoryId))
@@ -41,7 +42,11 @@ public class SearchServiceImpl implements SearchService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to search vectors in Qdrant", e);
         }
-        return result.stream().map(point -> Document.builder()
+        double maxScore = result.stream().
+                mapToDouble(Points.ScoredPoint::getScore).
+                max().
+                orElse(0.0);
+        List<Document> documents = result.stream().map(point -> Document.builder()
                 .text(point.getPayloadMap()
                         .get("text")
                         .getStringValue())
@@ -52,5 +57,9 @@ public class SearchServiceImpl implements SearchService {
                         .get("filePath")
                         .getStringValue())
                 .build()).toList();
+        return SearchResultDto.builder().
+                documents(documents).
+                maxScore(maxScore).
+                build();
     }
 }

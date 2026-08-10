@@ -1,12 +1,10 @@
 package com.sriram.ai.codepilot_ai.controller;
 
+import com.sriram.ai.codepilot_ai.dto.ChatResponse;
 import com.sriram.ai.codepilot_ai.dto.QueryRequest;
 import com.sriram.ai.codepilot_ai.retrieval.chat.ChatService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -15,8 +13,8 @@ import javax.validation.Valid;
 @RequestMapping("/api/chat")
 public class ChatController {
     private final ChatService chatService;
-    @PostMapping("/ask")
-    public String askQuestion(@Valid @RequestBody QueryRequest queryRequest) {
-        return chatService.chat(queryRequest.getRepositoryId() , queryRequest.getQuestion());
+    @PostMapping("/conversations/{conversationId}/chat")
+    public ChatResponse askQuestion(@Valid @RequestBody QueryRequest queryRequest, @PathVariable Long conversationId) {
+        return chatService.chat(conversationId , queryRequest.getQuestion());
     }
 }
