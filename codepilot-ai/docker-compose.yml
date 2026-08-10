@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   postgres:
@@ -36,19 +34,17 @@ services:
 
     volumes:
       - qdrant_data:/qdrant/storage
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:6333/healthz" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+
   backend:
     build: .
 
     container_name: codepilot-backend
 
     depends_on:
-      - postgres
-      - qdrant
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
 
     ports:
       - "8080:8080"
@@ -61,7 +57,7 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
 
       QDRANT_HOST: qdrant
-      QDRANT_PORT: 6333
+      QDRANT_PORT: 6334
 
       REPOSITORY_ROOT: /repositories
     volumes:
