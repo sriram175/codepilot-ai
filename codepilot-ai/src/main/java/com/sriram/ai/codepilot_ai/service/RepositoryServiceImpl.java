@@ -61,6 +61,7 @@ public class RepositoryServiceImpl implements RepositoryService {
                 .repositoryId(repository.getId())
                 .repositoryName(repository.getName())
                 .repositoryUrl(repository.getUrl())
+                .repositorySummary(repository.getSummary())
                 .createdAt(repository.getCreatedAt())
                 .build();
     }

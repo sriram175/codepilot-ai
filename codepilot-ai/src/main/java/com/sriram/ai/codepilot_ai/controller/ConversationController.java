@@ -3,6 +3,7 @@ package com.sriram.ai.codepilot_ai.controller;
 import com.sriram.ai.codepilot_ai.dto.ConversationResponse;
 import com.sriram.ai.codepilot_ai.dto.CreateConversationResponse;
 import com.sriram.ai.codepilot_ai.dto.MessageResponse;
+import com.sriram.ai.codepilot_ai.dto.UpdateConversationTitleRequest;
 import com.sriram.ai.codepilot_ai.service.ConversationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -30,6 +31,18 @@ public class ConversationController {
     @GetMapping("/conversations/{conversationId}/messages")
     public ResponseEntity<List<MessageResponse>> getMessages(@PathVariable Long conversationId){
         return ResponseEntity.ok(conversationService.getMessages(conversationId));
+    }
+
+    @PatchMapping("/conversations/{conversationId}/title")
+    public ResponseEntity<Void> updateTitle(
+            @PathVariable Long conversationId,
+            @RequestBody UpdateConversationTitleRequest request) {
+
+        conversationService.updateTitle(
+                conversationId,
+                request.getTitle());
+
+        return ResponseEntity.ok().build();
     }
 }
 

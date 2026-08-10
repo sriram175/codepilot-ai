@@ -70,4 +70,13 @@ public class ConversationServiceImpl implements  ConversationService{
                                 .build()
                         ).toList();
     }
+
+    @Override
+    public void updateTitle(Long conversationId, String title) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow();
+        conversation.setTitle(title);
+        conversationRepository.save(conversation);
+
+    }
 }
