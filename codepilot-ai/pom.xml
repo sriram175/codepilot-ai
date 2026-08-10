@@ -87,6 +87,7 @@
 			<groupId>org.springframework.ai</groupId>
 			<artifactId>spring-ai-starter-model-google-genai</artifactId>
 		</dependency>
+
 		<dependency>
 			<groupId>io.qdrant</groupId>
 			<artifactId>client</artifactId>
