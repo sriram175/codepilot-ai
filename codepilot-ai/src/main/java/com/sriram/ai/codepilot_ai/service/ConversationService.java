@@ -15,5 +15,6 @@ public interface ConversationService {
     void deleteConversation(Long conversationId);
 
     List<MessageResponse> getMessages(Long conversationId);
+    void updateTitle(Long conversationId, String title);
 
 }

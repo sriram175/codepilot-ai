@@ -4,22 +4,29 @@ services:
 
   postgres:
     image: postgres:16
+    restart: unless-stopped
 
     container_name: codepilot-postgres
 
     environment:
       POSTGRES_DB: codepilot
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
     ports:
       - "5433:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   qdrant:
     image: qdrant/qdrant:latest
+    restart: unless-stopped
 
     container_name: codepilot-qdrant
 
@@ -29,7 +36,42 @@ services:
 
     volumes:
       - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:6333/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  backend:
+    build: .
+
+    container_name: codepilot-backend
+
+    depends_on:
+      - postgres
+      - qdrant
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/codepilot
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+
+      REPOSITORY_ROOT: /repositories
+    volumes:
+      - repositories_data:/repositories
+
+
+    restart: unless-stopped
+
 
 volumes:
   postgres_data:
   qdrant_data:
+  repositories_data:

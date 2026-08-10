@@ -11,5 +11,6 @@ public class RepositoryResponse {
     private Long repositoryId;
     private String repositoryName;
     private String repositoryUrl;
+    private String repositorySummary;
     private LocalDateTime createdAt;
 }

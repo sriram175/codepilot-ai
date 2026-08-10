@@ -1,6 +1,6 @@
 package com.sriram.ai.codepilot_ai.retrieval.chat;
 
-import com.sriram.ai.codepilot_ai.retrieval.classifier.QuestionType;
+import com.sriram.ai.codepilot_ai.exception.ConversationNotFoundException;
 import com.sriram.ai.codepilot_ai.retrieval.classifier.QuestionTypeClassifier;
 import com.sriram.ai.codepilot_ai.retrieval.history.ConversationHistoryService;
 import com.sriram.ai.codepilot_ai.retrieval.prompt.PromptBuilder;
@@ -45,14 +45,16 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     public ChatResponse chat(Long conversationId, String question) {
+
+        log.info("Received question for conversation {}", conversationId);
+
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ConversationNotFoundException(conversationId));
         Repository repository = conversation.getRepository();
 
         messageService.saveUserMessage(conversation,question);
         List<Message> messages = messageService.getConversationMessages(conversationId);
         String conversationHistory = conversationHistoryService.buildConversationHistory(messages);
-//        QuestionType questionType = questionTypeClassifier.classify(question);
         return handleCodeQuestion(question,
                     conversation,
                     conversationHistory,
@@ -62,22 +64,7 @@ public class ChatServiceImpl implements ChatService {
 
     }
 
-    private ChatResponse handleArchitectureQuestion(String question,
-                                                    Conversation conversation,
-                                                    String conversationHistory,
-                                                    Repository repository) {
-        String summary = repository.getSummary();
-        String prompt = promptBuilder.buildArchitecturePrompt(summary,conversationHistory,question);
-        String answer = chatClient.prompt(prompt)
-                .call()
-                .content();
-        messageService.saveAssistantMessage(conversation,answer);
-        return ChatResponse.builder()
-                .answer(answer)
-                .sources(List.of())
-                .build();
 
-    }
 
     private ChatResponse handleCodeQuestion(String question,
                                             Conversation conversation,
@@ -86,13 +73,19 @@ public class ChatServiceImpl implements ChatService {
                                             Repository repository
                                             ){
         String rewrittenQuestion = question;
-        if(messages.size() > 1) {
+        if(!messages.isEmpty()) {
             rewrittenQuestion = queryRewriteService.rewrite(messages, question);
+            log.debug("Rewritten query: {}", rewrittenQuestion);
         }
         SearchResultDto searchResultDto = searchService.search(repository.getId(),rewrittenQuestion);
         List<Document> documents = searchResultDto.getDocuments();
         double maxScore = searchResultDto.getMaxScore();
 
+        log.info(
+                "Retrieved {} documents. Max score={}",
+                documents.size(),
+                maxScore
+        );
 
         if (documents.isEmpty() || maxScore < scoreThreshold) {
             return ChatResponse.builder()
@@ -112,6 +105,7 @@ public class ChatServiceImpl implements ChatService {
                 .toList();
         String prompt = promptBuilder.buildChatPrompt(conversationHistory,context,question, repository.getSummary());
         try {
+            log.info("Generating AI response");
             String answer = chatClient.prompt(prompt)
                     .call()
                     .content();
@@ -121,6 +115,7 @@ public class ChatServiceImpl implements ChatService {
                     .sources(sources)
                     .build();
         } catch (Exception e) {
+            log.error("Gemini request failed", e);
             throw new RuntimeException("Failed to generate answer", e);
         }
 
