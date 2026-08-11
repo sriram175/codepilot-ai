@@ -15,15 +15,22 @@ public class QdrantConfiguration {
     @Value("${QDRANT_PORT}")
     private int port;
 
+    @Value("${QDRANT_USE_TLS:false}")
+    private boolean useTls;
+
+    @Value("${QDRANT_API_KEY:}")
+    private String apiKey;
+
     @Bean
     public QdrantClient qdrantClient() {
 
-        return new QdrantClient(
-                QdrantGrpcClient.newBuilder(
-                        host,
-                        port,
-                        false
-                ).build()
-        );
+        QdrantGrpcClient.Builder builder =
+                QdrantGrpcClient.newBuilder(host, port, useTls);
+
+        if (!apiKey.isBlank()) {
+            builder.withApiKey(apiKey);
+        }
+
+        return new QdrantClient(builder.build());
     }
 }
