@@ -87,7 +87,7 @@ public class ChatServiceImpl implements ChatService {
                 maxScore
         );
 
-        if (documents.isEmpty() || maxScore < scoreThreshold) {
+        if (documents.isEmpty()) {
             return ChatResponse.builder()
                     .answer("I couldn't find any relevant information in the repository.")
                     .sources(List.of())

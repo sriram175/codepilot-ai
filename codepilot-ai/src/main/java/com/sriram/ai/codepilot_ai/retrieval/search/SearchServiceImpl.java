@@ -32,7 +32,7 @@ public class SearchServiceImpl implements SearchService {
         Points.SearchPoints searchPoints = Points.SearchPoints.newBuilder()
                 .setCollectionName(collectionName)
                 .addAllVector(questionEmbedding)
-                .setLimit(5)
+                .setLimit(10)
                 .setFilter(filter)
                 .setWithPayload(enable(true))
                 .build();
