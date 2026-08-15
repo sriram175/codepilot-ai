@@ -9,6 +9,7 @@ import com.sriram.ai.codepilot_ai.exception.RepositoryNotFoundException;
 import com.sriram.ai.codepilot_ai.repository.ConversationRepository;
 import com.sriram.ai.codepilot_ai.repository.MessageRepository;
 import com.sriram.ai.codepilot_ai.repository.RepositoryRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -51,11 +52,15 @@ public class ConversationServiceImpl implements  ConversationService{
                 .toList();
     }
 
+    @Transactional
     @Override
     public void deleteConversation(Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId).orElseThrow();
-        conversationRepository.delete(conversation);
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow();
 
+        messageRepository.deleteByConversationId(conversationId);
+
+        conversationRepository.delete(conversation);
     }
 
     @Override
